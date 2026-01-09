@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import { 
   FileText, TrendingUp, AlertCircle, Clock, CheckCircle, 
-  MapPin, Filter, Download, Zap, Loader2, Info, Settings, Search, Tag, ListFilter, FileDown, X
+  MapPin, Filter, Download, Zap, Loader2, Info, Settings, Search, Tag, ListFilter, FileDown, X, RotateCcw
 } from 'lucide-react';
 import { Ticket, FilterState, Statistics, SecteurMapping } from './types';
 import { parseExcelFile, calculateStats } from './utils/dataProcessor';
@@ -50,6 +50,7 @@ const App: React.FC = () => {
     type: [],
     mois: [],
     statusSla: 'all',
+    statusReouverture: 'all',
     searchQuery: ''
   });
   
@@ -100,6 +101,11 @@ const App: React.FC = () => {
         (filters.statusSla === 'respected' && t.isSlaRespected) || 
         (filters.statusSla === 'exceeded' && !t.isSlaRespected);
       
+      const matchReouverture = 
+        filters.statusReouverture === 'all' ||
+        (filters.statusReouverture === 'reopened' && t.typeRecours.toUpperCase().includes('RECL')) ||
+        (filters.statusReouverture === 'normal' && !t.typeRecours.toUpperCase().includes('RECL'));
+
       const matchSearch = query === '' || 
         t.nd.toLowerCase().includes(query) || 
         t.zr.toLowerCase().includes(query) || 
@@ -107,7 +113,7 @@ const App: React.FC = () => {
         t.type.toLowerCase().includes(query) ||
         t.secteur.toLowerCase().includes(query);
       
-      return matchProd && matchSecteur && matchZR && matchMotif && matchType && matchMonth && matchSla && matchSearch;
+      return matchProd && matchSecteur && matchZR && matchMotif && matchType && matchMonth && matchSla && matchReouverture && matchSearch;
     });
   }, [mappedTickets, filters]);
 
@@ -222,7 +228,7 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 max-w-[1600px] mx-auto w-full p-4 lg:p-6 flex flex-col lg:flex-row gap-8">
         
-        {/* Sidebar Filters - Fixed height for scrolling */}
+        {/* Sidebar Filters */}
         {rawTickets.length > 0 && (
           <aside className="w-full lg:w-72 shrink-0 lg:sticky lg:top-24 h-[calc(100vh-8rem)]">
             <Filters tickets={mappedTickets} filters={filters} setFilters={setFilters} />
@@ -261,41 +267,47 @@ const App: React.FC = () => {
               )}
 
               {/* Top Stats */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <StatCard 
                   label="VOLUME TOTAL" 
                   value={stats.totalTickets} 
                   icon={<FileText size={24} />} 
-                  color="red"
-                  subValue="Tickets actifs filtrés"
+                  color="slate"
+                  subValue="Tickets filtrés"
                 />
                 <StatCard 
                   label="PERFORMANCE SLA" 
                   value={`${stats.slaRate.toFixed(1)}%`} 
                   icon={<CheckCircle size={24} />} 
                   color={stats.slaRate >= 75 ? "green" : stats.slaRate > 60 ? "amber" : "red"}
-                  subValue="Cible : 75% (<1j)"
+                  subValue="Cible : 75%"
                 />
                 <StatCard 
                   label="DÉLAI MOYEN" 
                   value={`${stats.avgDelay.toFixed(2)}j`} 
                   icon={<Clock size={24} />} 
                   color={stats.avgDelay < 1.5 ? "green" : "red"}
-                  subValue="Temps de résolution"
+                  subValue="Traitement"
                 />
                 <StatCard 
                   label="ALERTE RETARD" 
                   value={stats.exceededSla} 
                   icon={<AlertCircle size={24} />} 
                   color="red"
-                  subValue="Actions prioritaires"
+                  subValue="Priorité haute"
+                />
+                <StatCard 
+                  label="RÉOUVERTURES" 
+                  value={stats.reopenedTickets} 
+                  icon={<RotateCcw size={24} />} 
+                  color={stats.reopenedRate < 5 ? "green" : "red"}
+                  subValue={`Taux: ${stats.reopenedRate.toFixed(1)}%`}
                 />
               </div>
 
               {/* Gemini Insights Section */}
               {insights && (
-                <div className="bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
-                  {/* Close button */}
+                <div className="bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group animate-in zoom-in-95 duration-500">
                   <button 
                     onClick={() => setInsights('')}
                     className="absolute top-8 right-8 p-2 text-slate-400 hover:text-white transition-colors z-20 bg-slate-800/50 rounded-full"
@@ -325,9 +337,7 @@ const App: React.FC = () => {
 
               {/* Charts Grid */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-12">
-                
-                {/* Evolution Temporelle */}
-                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                   <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
                     <span>Évolution Temporelle</span>
                     <TrendingUp size={20} className="text-red-600" />
@@ -338,9 +348,7 @@ const App: React.FC = () => {
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} fontWeight="700" tickLine={false} axisLine={false} />
                         <YAxis stroke="#94a3b8" fontSize={12} fontWeight="700" tickLine={false} axisLine={false} />
-                        <Tooltip 
-                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
-                        />
+                        <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }} />
                         <Legend verticalAlign="top" align="right" iconType="circle" />
                         <Line type="monotone" dataKey="total" name="Total" stroke="#dc2626" strokeWidth={4} dot={{ r: 5, fill: '#dc2626', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 7 }} />
                         <Line type="monotone" dataKey="sla" name="SLA OK" stroke="#10b981" strokeWidth={4} dot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }} />
@@ -349,8 +357,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Mix par Produit */}
-                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                   <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
                     <span>Mix par Produit (%)</span>
                     <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
@@ -360,12 +367,7 @@ const App: React.FC = () => {
                       <PieChart>
                         <Pie
                           data={stats.ticketsPerProduct}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={80}
-                          outerRadius={110}
-                          paddingAngle={8}
-                          dataKey="value"
+                          cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={8} dataKey="value"
                         >
                           {stats.ticketsPerProduct.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
@@ -377,52 +379,6 @@ const App: React.FC = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
-
-                {/* Top Motifs (Pareto) */}
-                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
-                    <span>Pareto des Motifs</span>
-                    <Tag size={20} className="text-red-600" />
-                  </h3>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={stats.ticketsPerMotif} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" width={140} fontSize={10} fontWeight="700" tickLine={false} axisLine={false} />
-                        <Tooltip 
-                          cursor={{fill: '#fff1f1'}}
-                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                        />
-                        <Bar dataKey="value" name="Nb Tickets" fill="#dc2626" radius={[0, 8, 8, 0]} barSize={20} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Typologie des tickets */}
-                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
-                    <span>Typologie des Tickets</span>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase ml-2">(SLA Cible: 75%)</div>
-                    <ListFilter size={20} className="text-slate-900 ml-auto" />
-                  </h3>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={stats.ticketsPerType}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight="700" tickLine={false} axisLine={false} />
-                        <YAxis stroke="#94a3b8" fontSize={12} fontWeight="700" tickLine={false} axisLine={false} />
-                        <Tooltip 
-                          cursor={{fill: '#f8fafc'}}
-                          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                        />
-                        <Bar dataKey="value" name="Volume" fill="#1e293b" radius={[8, 8, 0, 0]} barSize={40} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
               </div>
 
               {/* Data Table */}
@@ -439,10 +395,10 @@ const App: React.FC = () => {
                       <tr>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ND / Login</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Produit</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Motif</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Recours</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Secteur / ZR</th>
                         <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Délai (j)</th>
-                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Statut SLA</th>
+                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">SLA</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
@@ -455,7 +411,11 @@ const App: React.FC = () => {
                             <span className="text-[10px] font-black px-3 py-1 bg-white border border-slate-100 text-slate-600 rounded-lg shadow-sm uppercase">{ticket.produit}</span>
                           </td>
                           <td className="px-8 py-5">
-                            <span className="text-xs text-slate-500 font-medium line-clamp-1 max-w-[200px]" title={ticket.motif}>{ticket.motif}</span>
+                            {ticket.typeRecours.toUpperCase().includes('RECL') ? (
+                              <span className="text-[9px] font-black px-2 py-0.5 bg-red-100 text-red-600 rounded-md uppercase animate-pulse">Réouverture</span>
+                            ) : (
+                              <span className="text-[9px] font-medium text-slate-300">-</span>
+                            )}
                           </td>
                           <td className="px-8 py-5">
                             <div className="flex flex-col">
@@ -470,26 +430,15 @@ const App: React.FC = () => {
                           </td>
                           <td className="px-8 py-5 text-center">
                             {ticket.isSlaRespected ? (
-                              <div className="inline-flex items-center text-emerald-600 font-black text-[9px] uppercase tracking-widest">
-                                <CheckCircle size={14} className="mr-1.5" />
-                                Conforme
-                              </div>
+                              <CheckCircle size={18} className="text-emerald-500 mx-auto" />
                             ) : (
-                              <div className="inline-flex items-center text-red-600 font-black text-[9px] uppercase tracking-widest">
-                                <AlertCircle size={14} className="mr-1.5" />
-                                Hors Délai
-                              </div>
+                              <AlertCircle size={18} className="text-red-500 mx-auto" />
                             )}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {filteredTickets.length > 100 && (
-                    <div className="p-6 text-center border-t border-slate-50 bg-slate-50/30">
-                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Aperçu limité aux 100 premières lignes</p>
-                    </div>
-                  )}
                 </div>
               </div>
             </>
@@ -497,7 +446,6 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t border-slate-100 py-10">
         <div className="max-w-[1600px] mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-2">

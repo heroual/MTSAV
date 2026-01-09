@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { FilterState, Ticket } from '../types';
-import { Search, MapPin, Tag, ListFilter, SlidersHorizontal, CalendarDays, CheckSquare, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, MapPin, Tag, ListFilter, SlidersHorizontal, CalendarDays, CheckSquare, ChevronUp, ChevronDown, RotateCcw } from 'lucide-react';
 
 interface FiltersProps {
   tickets: Ticket[];
@@ -43,7 +43,7 @@ const Filters: React.FC<FiltersProps> = ({ tickets, filters, setFilters }) => {
 
   return (
     <div className="relative h-full flex flex-col group/filters">
-      {/* Scroll Navigation Controls - "The Bar to Up and Down" */}
+      {/* Scroll Navigation Controls */}
       <div className="absolute -right-4 top-1/2 -translate-y-1/2 flex flex-col space-y-3 z-20 transition-opacity opacity-0 group-hover/filters:opacity-100 lg:opacity-100">
         <button 
           onClick={() => scrollTo('top')}
@@ -76,7 +76,7 @@ const Filters: React.FC<FiltersProps> = ({ tickets, filters, setFilters }) => {
           </h2>
           {Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : v !== 'all' && v !== '') && (
               <button 
-                  onClick={() => setFilters({ produit: [], secteur: [], zr: [], motif: [], type: [], mois: [], statusSla: 'all', searchQuery: '' })}
+                  onClick={() => setFilters({ produit: [], secteur: [], zr: [], motif: [], type: [], mois: [], statusSla: 'all', statusReouverture: 'all', searchQuery: '' })}
                   className="text-[10px] font-black text-red-600 uppercase tracking-widest hover:underline"
               >
                   Vider
@@ -184,31 +184,60 @@ const Filters: React.FC<FiltersProps> = ({ tickets, filters, setFilters }) => {
           </div>
         </section>
 
-        {/* SLA */}
-        <section className="pb-8">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center">
-            <CheckSquare size={14} className="mr-2 text-red-600" />
-            Statut de Performance
-          </h3>
-          <div className="space-y-4">
-            {[
-              { id: 'all', label: 'Consolidé' },
-              { id: 'respected', label: 'Conforme (SLA)' },
-              { id: 'exceeded', label: 'Hors Délai' }
-            ].map((status) => (
-              <label key={status.id} className="flex items-center space-x-3 cursor-pointer group">
-                <input 
-                  type="radio" 
-                  name="slaStatus"
-                  className="w-5 h-5 border-2 border-slate-100 text-red-600 focus:ring-red-600"
-                  checked={filters.statusSla === status.id}
-                  onChange={() => setFilters(prev => ({ ...prev, statusSla: status.id as any }))}
-                />
-                <span className="text-xs font-bold text-slate-600 group-hover:text-red-600 transition-colors uppercase tracking-tighter">
-                  {status.label}
-                </span>
-              </label>
-            ))}
+        {/* SLA & Réouvertures (Statut de Performance) */}
+        <section className="pb-8 space-y-8">
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center">
+              <CheckSquare size={14} className="mr-2 text-red-600" />
+              Objectifs SLA
+            </h3>
+            <div className="space-y-4">
+              {[
+                { id: 'all', label: 'Consolidé' },
+                { id: 'respected', label: 'Conforme (<1j)' },
+                { id: 'exceeded', label: 'Hors Délai (>1j)' }
+              ].map((status) => (
+                <label key={status.id} className="flex items-center space-x-3 cursor-pointer group">
+                  <input 
+                    type="radio" 
+                    name="slaStatus"
+                    className="w-5 h-5 border-2 border-slate-100 text-red-600 focus:ring-red-600"
+                    checked={filters.statusSla === status.id}
+                    onChange={() => setFilters(prev => ({ ...prev, statusSla: status.id as any }))}
+                  />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-red-600 transition-colors uppercase tracking-tighter">
+                    {status.label}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center">
+              <RotateCcw size={14} className="mr-2 text-red-600" />
+              Réouvertures (RECL)
+            </h3>
+            <div className="space-y-4">
+              {[
+                { id: 'all', label: 'Tous les tickets' },
+                { id: 'reopened', label: 'Réouvertures Uniq.' },
+                { id: 'normal', label: 'Standard Uniq.' }
+              ].map((status) => (
+                <label key={status.id} className="flex items-center space-x-3 cursor-pointer group">
+                  <input 
+                    type="radio" 
+                    name="reopenedStatus"
+                    className="w-5 h-5 border-2 border-slate-100 text-red-600 focus:ring-red-600"
+                    checked={filters.statusReouverture === status.id}
+                    onChange={() => setFilters(prev => ({ ...prev, statusReouverture: status.id as any }))}
+                  />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-red-600 transition-colors uppercase tracking-tighter">
+                    {status.label}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
         </section>
       </div>
