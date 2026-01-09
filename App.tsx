@@ -337,6 +337,8 @@ const App: React.FC = () => {
 
               {/* Charts Grid */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-12">
+                
+                {/* Evolution Temporelle */}
                 <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                   <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
                     <span>Évolution Temporelle</span>
@@ -357,6 +359,7 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Mix par Produit */}
                 <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
                   <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
                     <span>Mix par Produit (%)</span>
@@ -379,6 +382,64 @@ const App: React.FC = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
+
+                {/* Pareto des Motifs */}
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                  <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
+                    <span>Top Motifs de Clôture</span>
+                    <Tag size={20} className="text-red-600" />
+                  </h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.ticketsPerMotif} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
+                        <XAxis type="number" hide />
+                        <YAxis dataKey="name" type="category" width={140} fontSize={10} fontWeight="700" tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{fill: '#fff1f1'}} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                        <Bar dataKey="value" name="Tickets" fill="#dc2626" radius={[0, 8, 8, 0]} barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Typologie */}
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                  <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
+                    <span>Typologie de Réclamation</span>
+                    <ListFilter size={20} className="text-slate-900" />
+                  </h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.ticketsPerType}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight="700" tickLine={false} axisLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={12} fontWeight="700" tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                        <Bar dataKey="value" name="Volume" fill="#1e293b" radius={[8, 8, 0, 0]} barSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Top ZR (Zone de Recherche) */}
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm xl:col-span-2">
+                  <h3 className="text-lg font-black text-slate-900 mb-8 flex items-center justify-between uppercase tracking-tighter italic">
+                    <span>Top 10 Unités Techniques (ZR) par Charge</span>
+                    <MapPin size={20} className="text-red-600" />
+                  </h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.ticketsPerZR}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight="700" tickLine={false} axisLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={12} fontWeight="700" tickLine={false} axisLine={false} />
+                        <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                        <Bar dataKey="total" name="Nb Tickets" fill="#dc2626" radius={[8, 8, 0, 0]} barSize={50} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
               </div>
 
               {/* Data Table */}

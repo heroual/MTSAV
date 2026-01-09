@@ -9,6 +9,7 @@ export const generatePDFReport = (stats: Statistics, tickets: Ticket[], filters:
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), 'dd/MM/yyyy HH:mm');
 
+  // PAGE 1: HEADER & KPI
   doc.setFillColor(220, 38, 38); 
   doc.rect(0, 0, pageWidth, 45, 'F');
   
@@ -44,11 +45,11 @@ export const generatePDFReport = (stats: Statistics, tickets: Ticket[], filters:
 
   doc.setTextColor(31, 41, 55);
   doc.setFontSize(14);
-  doc.text('SEGMENTATION OPÉRATIONNELLE', 15, 100);
+  doc.text('ANALYSE PAR PRODUIT & RÉOUVERTURES', 15, 100);
 
   doc.autoTable({
     startY: 105,
-    head: [['OFFRE PRODUIT', 'VOLUME', 'RÉOUVERTURES']],
+    head: [['OFFRE PRODUIT', 'VOLUME', 'RÉOUVERTURES (RECL)']],
     body: stats.ticketsPerProduct.map(p => {
         const prodTickets = tickets.filter(t => t.produit === p.name);
         const prodRecl = prodTickets.filter(t => t.typeRecours.toUpperCase().includes('RECL')).length;
@@ -60,6 +61,56 @@ export const generatePDFReport = (stats: Statistics, tickets: Ticket[], filters:
     styles: { fontSize: 8 }
   });
 
+  // PAGE 2: MOTIFS, TYPES & ZR
+  doc.addPage();
+  
+  doc.setFillColor(31, 41, 55);
+  doc.rect(0, 0, pageWidth, 20, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(12);
+  doc.text('SEGMENTATION OPÉRATIONNELLE DÉTAILLÉE', 15, 13);
+
+  doc.setTextColor(31, 41, 55);
+  doc.setFontSize(14);
+  doc.text('PARETO DES MOTIFS DE CLÔTURE', 15, 35);
+  
+  doc.autoTable({
+    startY: 40,
+    head: [['MOTIF DE CLÔTURE', 'VOLUME']],
+    body: stats.ticketsPerMotif.map(m => [m.name, m.value]),
+    theme: 'striped',
+    headStyles: { fillColor: [220, 38, 38] },
+    margin: { left: 15, right: 15 },
+    styles: { fontSize: 8 }
+  });
+
+  const nextY = (doc as any).lastAutoTable.finalY + 15;
+  doc.text('TYPOLOGIE DES RÉCLAMATIONS', 15, nextY);
+
+  doc.autoTable({
+    startY: nextY + 5,
+    head: [['TYPE DE RÉCLAMATION', 'VOLUME']],
+    body: stats.ticketsPerType.map(t => [t.name, t.value]),
+    theme: 'striped',
+    headStyles: { fillColor: [30, 41, 59] },
+    margin: { left: 15, right: 15 },
+    styles: { fontSize: 8 }
+  });
+
+  const nextY2 = (doc as any).lastAutoTable.finalY + 15;
+  doc.text('TOP 10 UNITÉS TECHNIQUES (ZR)', 15, nextY2);
+
+  doc.autoTable({
+    startY: nextY2 + 5,
+    head: [['UNITÉ (ZR)', 'VOLUME', 'DÉLAI MOYEN (J)']],
+    body: stats.ticketsPerZR.map(z => [z.name, z.total, z.delay.toFixed(2)]),
+    theme: 'striped',
+    headStyles: { fillColor: [220, 38, 38] },
+    margin: { left: 15, right: 15 },
+    styles: { fontSize: 8 }
+  });
+
+  // FOOTER
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
